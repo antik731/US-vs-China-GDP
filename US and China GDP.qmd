@@ -1,0 +1,114 @@
+---
+title: "US vs China GDP"
+author: "Antik Salimullah"
+format: html
+editor: visual
+---
+
+## Introduction
+
+For this project, I will use World Bank GDP data to compare the economic growth of the United States and China. The original dataset contains GDP figures organized by year in wide format, which I will transform into long format using `tidyr`. I will then analyze GDP trends over time to better understand how China's economy has grown relative to the United States.
+
+## Documentation
+
+I downloaded the GDP dataset from the World Bank's World Development Indicators database <https://data.worldbank.org/indicator/NY.GDP.MKTP.CD?locations=US-CN>. The original dataset was in wide format with 2 rows and 70 columns, including yearly GDP data from 1960 to 2025.
+
+I used `read_excel()` to import the data and skipped the first three rows to correctly identify the column names. I then removed unnecessary columns using `select()` and transformed the data from wide to long format using `pivot_longer()`. The final dataset contains 132 rows and 3 columns: Country Name, Year, and GDP.
+
+I checked for missing values and found none. Finally, I used `group_by()` and `summarise()` to calculate average GDP for both countries and created a line graph with `ggplot2` to compare their economic growth over time.
+
+## Load library packages 
+
+```{r}
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+## Import the data
+
+```{r}
+# Import World Bank GDP data
+gdp_wide <- read_excel("api_gdp_v2.xls", skip = 3)
+
+# Preview the dataset
+head(gdp_wide)
+
+# Check column names and dimensions
+names(gdp_wide)
+dim(gdp_wide)
+```
+
+## Data Cleaning
+
+```{r}
+# Keep country names and yearly GDP values
+gdp_clean <- gdp_wide %>%
+  select(-`Country Code`, -`Indicator Name`, -`Indicator Code`)
+
+# Preview cleaned data
+head(gdp_clean)
+```
+
+## Transform Data from Wide to Long Format
+
+```{r}
+# Transform yearly GDP columns into long format
+gdp_long <- gdp_clean %>%
+  pivot_longer(
+    cols = `1960`:`2025`,
+    names_to = "Year",
+    values_to = "GDP"
+  )
+
+# Preview transformed data
+head(gdp_long)
+```
+
+## Check for Missing Values
+
+```{r}
+# Count missing GDP values by country
+gdp_long %>%
+  group_by(`Country Name`) %>%
+  summarise(
+    Missing_Values = sum(is.na(GDP))
+  )
+```
+
+## Calculate average GDP in trillions
+
+```{r}
+
+gdp_long %>%
+  group_by(`Country Name`) %>%
+  summarise(
+    Average_GDP_Trillions = round(mean(GDP) / 1e12, 2)
+  )
+```
+
+GDP Trends Over Time
+
+```{r}
+ggplot(gdp_long, aes(
+  x = as.numeric(Year),
+  y = GDP / 1e12,
+  color = `Country Name`
+)) +
+  geom_line() +
+  labs(
+    title = "U.S. vs. China GDP (1960–2025)",
+    x = "Year",
+    y = "GDP (Trillions of USD)",
+    color = "Country"
+  )
+```
+
+## Interpretation of Trends
+
+The United States has maintained a higher GDP than China throughout the period, but China's economy has grown rapidly since the early 2000s. China's GDP increased from around \$1 trillion in 2000 to nearly \$20 trillion in 2025, while the U.S. reached approximately \$31 trillion. Although China has significantly narrowed the economic gap compared with earlier decades, the United States still maintains a substantial lead.
+
+## Conclusion
+
+The analysis shows that although the United States has maintained a larger GDP, China has experienced significant economic growth over the past several decades. China's rapid expansion demonstrates how much its economy has developed, even though it has not surpassed the United States in total GDP measured in current U.S. dollars.
